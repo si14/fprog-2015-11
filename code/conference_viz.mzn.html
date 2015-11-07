@@ -1,0 +1,146 @@
+<!-- most of this code is written by Carleton Coffrin, www.coffr.in,
+     for Coursera's Modelling Discrete Optimization course -->
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="d3.min.js"></script>
+</head>
+<style>
+body {
+  font: 11px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 80%;
+    padding-bottom: 100%; /* aspect ratio */
+    vertical-align: top;
+    overflow: hidden;
+}
+.svg-content-responsive {
+    display: inline-block;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
+#viz {
+    margin: 60px;
+}
+
+</style>
+<body>
+
+    <div id="viz"></div>
+    <script type="text/javascript">
+
+    var windowWidth = window.innerWidth;
+    var windowHeight = window.innerHeight;
+
+
+    var solutions = [];
+
+     // d3.json("genMat.json", function(data) {
+    function addSolution(json){
+      var dataset = JSON.parse(json);
+      solutions.push(dataset);
+      gotoSolution(solutions.length-1);
+    }
+     function gotoSolution(solnumber) {
+         var dataset = solutions[solnumber];
+         var m = dataset.length;
+
+         var width = 800;
+         var height = 650;
+
+         var talkwidth = 50;
+         var talkgap = 10;
+
+         var colors = {"1": "#7fc97f",
+                       "2": "#beaed4",
+                       "3": "#fdc086",
+                       "4": "#ffff99",
+                       "5": "#386cb0"}
+
+         //Scalable SVG
+         /*     var SVG = d3.select("#viz")
+            .append("svg:svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 300 300")
+            .classed("svg-content-responsive", true); */
+
+
+         //Stackable SVG
+         d3.select("#viz").selectAll("*").remove();
+
+         var SVG = d3.select("#viz")
+                     .append("svg:svg")
+                     .attr("preserveAspectRatio", "xMinYMin meet")
+                     .attr("viewBox", "-50 -30 800 680")
+                     .classed("svg-content-responsive", true);
+
+         var maxX = dataset.length * talkwidth + (dataset.length - 1) * talkgap;
+         var maxY = 0;
+         var end;
+
+         for (var i = 0; i < dataset.length; i++) {
+             end = dataset[i]['start'] + dataset[i]['duration'];
+             if (end > maxY) {
+                 maxY = end;
+             }
+         }
+
+         var yScale = d3.scale.linear()
+                        .range([0, height*0.9]);
+         var yAxis = d3.svg.axis()
+                       .scale(yScale)
+                       .orient("left");
+
+         yScale.domain([0, d3.max(dataset, function(d) {return d['start'] + d['duration']})]);
+
+         SVG.append("g")
+            .attr("class", "axis")
+            .call(yAxis);
+
+         var scaleX = width / maxX;
+         var scaleY = height / maxY * 0.9;
+         var offY = 0;
+
+         var maxWhich = 0;
+         for (var i = 0; i < dataset.length; i++) {
+             if (dataset[i]['which'] > maxWhich) {
+                 maxWhich = dataset[i]['which'];
+             }
+         }
+
+
+         for (var i = 0; i < dataset.length; i++)
+         {
+             SVG.append("rect")
+                .attr("width", scaleX*talkwidth)
+                .attr("height", scaleY*(dataset[i]['duration']))
+                .attr("x", scaleX*(dataset[i]['idx'] * talkwidth +
+                                   (dataset[i]['idx'] - 1) * talkgap))
+                .attr("y", scaleY*dataset[i]['start'])
+                .style("fill", colors[dataset[i]['theme']])
+                .style("stroke-width","1")
+                .style("stroke","rgb(0,0,0)");
+             /* SVG.append("text")
+                .attr("x",scaleX*((dataset[i]['stack']+dataset[i]['finish'])/2))
+                .attr("y",offY+scaleY*((dataset[i]['westend']+dataset[i]['eastend'])/2))
+                .text(i+1)
+                .style("font-size","20pt"); */
+         }
+     };
+
+    </script>
+</body>
+</html>
